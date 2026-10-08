@@ -30,9 +30,7 @@ permissions:
   pull-requests: write
 
 env:
-  AWS_REGION: us-east-1
   TF_WORKING_DIR: environments/dev
-  AWS_ROLE_ARN: arn:aws:iam::259732629629:role/pharma-dev-github-actions-role
 
 jobs:
 
@@ -55,8 +53,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
