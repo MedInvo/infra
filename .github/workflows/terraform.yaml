@@ -7,7 +7,7 @@ on:
     paths:
       - "environments/dev/**"
       - "modules/**"
-      - ".github/workflows/terraform-dev.yml"
+      - ".github/workflows/terraform.yaml"
 
   push:
     branches:
@@ -15,7 +15,7 @@ on:
     paths:
       - "environments/dev/**"
       - "modules/**"
-      - ".github/workflows/terraform-dev.yml"
+      - ".github/workflows/terraform.yaml"
 
   workflow_dispatch:
     inputs:
@@ -31,6 +31,7 @@ permissions:
 
 env:
   TF_WORKING_DIR: environments/dev
+  TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
 
 jobs:
 
