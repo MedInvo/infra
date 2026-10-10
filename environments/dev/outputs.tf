@@ -33,3 +33,12 @@ output "eks_oidc_provider_arn" {
 output "eks_oidc_provider_url" {
   value = module.eks.oidc_provider_url
 }
+
+
+output "app_db_secret_name" {
+  value = module.app_db_secret.secret_name
+}
+
+output "external_secrets_role_arn" {
+  value = module.external_secrets_iam.role_arn
+}

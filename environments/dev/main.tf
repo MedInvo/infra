@@ -84,3 +84,28 @@ module "alb_controller" {
   oidc_provider_arn = module.eks.oidc_provider_arn
   oidc_provider_url = module.eks.oidc_provider_url
 }
+
+module "app_db_secret" {
+  source = "../../modules/secrets-manager"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  db_username = module.rds.db_username
+  db_password = var.db_password
+  db_host     = module.rds.db_address
+  db_port     = module.rds.db_port
+  db_name     = module.rds.db_name
+}
+
+module "external_secrets_iam" {
+  source = "../../modules/external-secrets-iam"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider_url = module.eks.oidc_provider_url
+
+  secret_arn = module.app_db_secret.secret_arn
+}

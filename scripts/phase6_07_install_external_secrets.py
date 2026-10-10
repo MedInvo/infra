@@ -9,7 +9,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-TERRAFORM_DIR = PROJECT_ROOT / "terraform" / "environments" / "dev"
+TERRAFORM_DIR = PROJECT_ROOT / "environments" / "dev"
 
 AWS_REGION = "us-east-1"
 
