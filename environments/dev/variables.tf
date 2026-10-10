@@ -22,4 +22,4 @@ variable "db_password" {
   sensitive   = true
 }
 
-# CI pipeline test
+# CI pipeline test_01
