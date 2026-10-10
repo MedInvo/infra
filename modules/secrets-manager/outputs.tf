@@ -1,0 +1,8 @@
+
+output "secret_arn" {
+  value = aws_secretsmanager_secret.app_db.arn
+}
+
+output "secret_name" {
+  value = aws_secretsmanager_secret.app_db.name
+}
