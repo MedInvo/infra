@@ -1,12 +1,7 @@
-resource "aws_secretsmanager_secret" "app_db" {
-  name                    = "${var.project_name}/${var.environment}/app-db"
-  description             = "Application PostgreSQL credentials"
-  recovery_window_in_days = 30
 
-  # Prevent accidental deletion through Terraform.
-  lifecycle {
-    prevent_destroy = true
-  }
+resource "aws_secretsmanager_secret" "app_db" {
+  name        = "${var.project_name}/${var.environment}/app-db"
+  description = "Application PostgreSQL credentials"
 
   tags = {
     Project     = var.project_name
