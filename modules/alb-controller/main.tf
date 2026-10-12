@@ -95,12 +95,11 @@ resource "aws_iam_policy" "alb_controller" {
           "elasticloadbalancing:DescribeSSLPolicies",
           "elasticloadbalancing:DescribeRules",
           "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeTargetGroupAttributes",
           "elasticloadbalancing:DescribeTargetHealth",
           "elasticloadbalancing:DescribeTags"
-  ]
-  Resource = "*"
-},
+        ]
+        Resource = "*"
+      },
       {
         Effect = "Allow"
         Action = [
