@@ -98,9 +98,9 @@ resource "aws_iam_policy" "alb_controller" {
           "elasticloadbalancing:DescribeTargetGroupAttributes",
           "elasticloadbalancing:DescribeTargetHealth",
           "elasticloadbalancing:DescribeTags"
-  ]
-  Resource = "*"
-},
+        ]
+        Resource = "*"
+      },
       {
         Effect = "Allow"
         Action = [
