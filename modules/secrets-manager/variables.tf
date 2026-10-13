@@ -28,3 +28,9 @@ variable "db_port" {
 variable "db_name" {
   type = string
 }
+
+variable "manage_secret_version" {
+  description = "Whether Terraform should manage the application secret version"
+  type        = bool
+  default     = false
+}
