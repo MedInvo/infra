@@ -95,6 +95,7 @@ resource "aws_iam_policy" "alb_controller" {
           "elasticloadbalancing:DescribeSSLPolicies",
           "elasticloadbalancing:DescribeRules",
           "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetGroupAttributes",
           "elasticloadbalancing:DescribeTargetHealth",
           "elasticloadbalancing:DescribeTags"
         ]
@@ -197,7 +198,11 @@ resource "aws_iam_policy" "alb_controller" {
           "elasticloadbalancing:DeregisterTargets",
           "elasticloadbalancing:SetIpAddressType",
           "elasticloadbalancing:SetSecurityGroups",
-          "elasticloadbalancing:SetSubnets"
+          "elasticloadbalancing:SetSubnets",
+          "elasticloadbalancing:CreateRule",
+          "elasticloadbalancing:DeleteRule",
+          "elasticloadbalancing:ModifyRule",
+          "elasticloadbalancing:SetRulePriorities",
         ]
         Resource = "*"
       }
