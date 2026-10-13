@@ -60,7 +60,7 @@ resource "aws_db_instance" "this" {
 
   auto_minor_version_upgrade = true
 
-  deletion_protection = true
+  deletion_protection = false
   skip_final_snapshot = false
 
   final_snapshot_identifier = "${var.project_name}-${var.environment}-final-snapshot"
