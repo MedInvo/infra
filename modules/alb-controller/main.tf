@@ -97,7 +97,9 @@ resource "aws_iam_policy" "alb_controller" {
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeTargetGroupAttributes",
           "elasticloadbalancing:DescribeTargetHealth",
-          "elasticloadbalancing:DescribeTags"
+          "elasticloadbalancing:DescribeTags",
+          "elasticloadbalancing:ModifyListener",
+
         ]
         Resource = "*"
       },
