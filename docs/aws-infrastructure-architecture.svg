@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">Pharma DevOps AWS Infrastructure Architecture</title>
+  <desc id="desc">Target architecture showing users, Route 53, API Gateway, VPC Link, an ALB, EKS application services, ECR, RDS PostgreSQL, Secrets Manager, External Secrets Operator, GitHub Actions, and Argo CD. API Gateway and Route 53 integration are marked as target/not yet verified.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#425466"/></marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/></marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#16805d"/></marker>
+    <style>
+      text{font-family:Inter,Arial,sans-serif;fill:#182230}
+      .heading{font-size:26px;font-weight:700}
+      .subheading{font-size:17px;font-weight:700}
+      .label{font-size:15px;font-weight:600}
+      .small{font-size:13px}
+      .tiny{font-size:12px}
+      .box{stroke-width:2;rx:14}
+      .aws{fill:#fff8ee;stroke:#d97706}
+      .compute{fill:#eef5ff;stroke:#2563eb}
+      .data{fill:#edfaf4;stroke:#16805d}
+      .control{fill:#f5f0ff;stroke:#7c3aed}
+      .neutral{fill:#f8fafc;stroke:#64748b}
+      .planned{stroke-dasharray:8 6}
+      .line{fill:none;stroke:#425466;stroke-width:2.5;marker-end:url(#arrow)}
+      .lineBlue{fill:none;stroke:#2563eb;stroke-width:2.5;marker-end:url(#arrowBlue)}
+      .lineGreen{fill:none;stroke:#16805d;stroke-width:2.5;marker-end:url(#arrowGreen)}
+      .dashed{stroke-dasharray:7 6}
+      .muted{fill:#526171}
+    </style>
+  </defs>
+
+  <rect width="1600" height="1120" fill="#ffffff"/>
+  <text x="50" y="48" class="heading">Pharma DevOps — AWS Infrastructure Architecture</text>
+  <text x="50" y="76" class="small muted">Target design • dashed components/links require configuration and end-to-end verification</text>
+
+  <!-- CI / GitOps control lane -->
+  <rect x="50" y="105" width="1500" height="150" rx="18" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="75" y="137" class="subheading">Build, publish and GitOps delivery (outside the VPC)</text>
+
+  <rect x="80" y="160" width="205" height="70" class="box neutral"/>
+  <text x="182" y="187" text-anchor="middle" class="label">GitHub</text>
+  <text x="182" y="208" text-anchor="middle" class="small">Source + pull requests</text>
+
+  <rect x="350" y="160" width="245" height="70" class="box control"/>
+  <text x="472" y="185" text-anchor="middle" class="label">GitHub Actions CI</text>
+  <text x="472" y="205" text-anchor="middle" class="small">Tests • Sonar • Trivy</text>
+  <text x="472" y="221" text-anchor="middle" class="tiny">OIDC → temporary AWS credentials</text>
+
+  <rect x="665" y="160" width="205" height="70" class="box aws"/>
+  <text x="767" y="187" text-anchor="middle" class="label">Amazon ECR</text>
+  <text x="767" y="208" text-anchor="middle" class="small">Versioned container images</text>
+
+  <rect x="955" y="160" width="235" height="70" class="box neutral"/>
+  <text x="1072" y="187" text-anchor="middle" class="label">GitOps repository</text>
+  <text x="1072" y="208" text-anchor="middle" class="small">Helm chart + image tags</text>
+
+  <rect x="1275" y="160" width="225" height="70" class="box control"/>
+  <text x="1387" y="187" text-anchor="middle" class="label">Argo CD</text>
+  <text x="1387" y="208" text-anchor="middle" class="small">Reconciles desired state</text>
+
+  <path d="M285 195 H350" class="line"/>
+  <path d="M595 195 H665" class="lineBlue"/>
+  <path d="M870 195 H955" class="line"/>
+  <path d="M1190 195 H1275" class="line"/>
+  <path d="M1387 230 V287 H1270 V355" class="lineBlue"/>
+  <text x="1290" y="277" class="tiny muted">Deploy/sync</text>
+
+  <!-- Public entry lane -->
+  <rect x="50" y="290" width="1500" height="130" rx="18" fill="#fffaf2" stroke="#f0c27a" stroke-width="2"/>
+  <text x="75" y="322" class="subheading">Application entry path (target; validate integration)</text>
+
+  <rect x="85" y="340" width="170" height="58" class="box neutral"/>
+  <text x="170" y="364" text-anchor="middle" class="label">User / browser</text>
+  <text x="170" y="384" text-anchor="middle" class="small">HTTPS request</text>
+
+  <rect x="330" y="340" width="190" height="58" class="box aws planned"/>
+  <text x="425" y="364" text-anchor="middle" class="label">Route 53</text>
+  <text x="425" y="384" text-anchor="middle" class="small">DNS record • target</text>
+
+  <rect x="595" y="340" width="220" height="58" class="box aws planned"/>
+  <text x="705" y="364" text-anchor="middle" class="label">API Gateway</text>
+  <text x="705" y="384" text-anchor="middle" class="small">HTTP API • target</text>
+
+  <rect x="895" y="340" width="180" height="58" class="box aws planned"/>
+  <text x="985" y="364" text-anchor="middle" class="label">VPC Link</text>
+  <text x="985" y="384" text-anchor="middle" class="small">If private integration</text>
+
+  <path d="M255 369 H330" class="line"/>
+  <path d="M520 369 H595" class="line"/>
+  <path d="M815 369 H895" class="line"/>
+  <path d="M1075 369 H1142 V465" class="line"/>
+
+  <!-- VPC boundary -->
+  <rect x="50" y="445" width="1500" height="625" rx="22" fill="#f8fbff" stroke="#4b83c3" stroke-width="3"/>
+  <text x="78" y="480" class="heading">AWS VPC</text>
+  <text x="78" y="504" class="small muted">Private network • subnet placement, routes and security groups depend on Terraform configuration</text>
+
+  <!-- Public subnet -->
+  <rect x="80" y="530" width="300" height="290" rx="16" fill="#fff7ed" stroke="#d97706" stroke-width="2"/>
+  <text x="102" y="560" class="subheading">Public subnet zone</text>
+  <rect x="110" y="585" width="240" height="82" class="box aws"/>
+  <text x="230" y="612" text-anchor="middle" class="label">Application Load Balancer</text>
+  <text x="230" y="633" text-anchor="middle" class="small">ALB created via Ingress</text>
+  <text x="230" y="651" text-anchor="middle" class="tiny">AWS Load Balancer Controller</text>
+  <rect x="110" y="700" width="240" height="70" class="box neutral"/>
+  <text x="230" y="727" text-anchor="middle" class="label">NAT Gateway</text>
+  <text x="230" y="748" text-anchor="middle" class="small">If configured / needed</text>
+
+  <!-- Private app subnet -->
+  <rect x="415" y="530" width="690" height="490" rx="16" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="440" y="560" class="subheading">Private application subnets</text>
+  <rect x="445" y="580" width="630" height="410" rx="18" fill="#ffffff" stroke="#7aa8e8" stroke-width="2"/>
+  <text x="468" y="610" class="subheading">Amazon EKS cluster</text>
+  <text x="468" y="633" class="small muted">Kubernetes control plane is AWS-managed; worker capacity runs in configured subnets</text>
+
+  <rect x="470" y="660" width="175" height="86" class="box compute"/>
+  <text x="557" y="688" text-anchor="middle" class="label">Frontend pods</text>
+  <text x="557" y="710" text-anchor="middle" class="small">UI / web assets</text>
+  <text x="557" y="729" text-anchor="middle" class="tiny">Deployment + Service</text>
+
+  <rect x="675" y="660" width="175" height="86" class="box compute"/>
+  <text x="762" y="688" text-anchor="middle" class="label">Product service</text>
+  <text x="762" y="710" text-anchor="middle" class="small">FastAPI</text>
+  <text x="762" y="729" text-anchor="middle" class="tiny">Deployment + Service</text>
+
+  <rect x="880" y="660" width="175" height="86" class="box compute"/>
+  <text x="967" y="688" text-anchor="middle" class="label">Order service</text>
+  <text x="967" y="710" text-anchor="middle" class="small">FastAPI</text>
+  <text x="967" y="729" text-anchor="middle" class="tiny">Deployment + Service</text>
+
+  <rect x="470" y="790" width="275" height="70" class="box control"/>
+  <text x="607" y="818" text-anchor="middle" class="label">Kubernetes Ingress + Services</text>
+  <text x="607" y="839" text-anchor="middle" class="small">Routes traffic to healthy pods</text>
+
+  <rect x="775" y="790" width="280" height="70" class="box neutral"/>
+  <text x="915" y="818" text-anchor="middle" class="label">External Secrets Operator</text>
+  <text x="915" y="839" text-anchor="middle" class="small">Syncs approved secret values</text>
+
+  <rect x="470" y="895" width="585" height="65" class="box neutral"/>
+  <text x="762" y="921" text-anchor="middle" class="label">IAM / EKS OIDC / IRSA</text>
+  <text x="762" y="942" text-anchor="middle" class="small">Scoped AWS permissions for workloads and controller</text>
+
+  <!-- DB subnet -->
+  <rect x="1140" y="530" width="375" height="290" rx="16" fill="#ecfdf5" stroke="#16805d" stroke-width="2"/>
+  <text x="1165" y="560" class="subheading">Private database subnet zone</text>
+  <rect x="1175" y="595" width="305" height="105" class="box data"/>
+  <text x="1327" y="626" text-anchor="middle" class="label">Amazon RDS</text>
+  <text x="1327" y="649" text-anchor="middle" class="label">PostgreSQL</text>
+  <text x="1327" y="674" text-anchor="middle" class="small">Persistent application data</text>
+  <text x="1327" y="740" text-anchor="middle" class="small muted">TCP 5432 allowed only from</text>
+  <text x="1327" y="759" text-anchor="middle" class="small muted">the intended application source</text>
+
+  <!-- AWS secret store outside subnet interior but within VPC boundary -->
+  <rect x="1140" y="855" width="375" height="135" rx="16" fill="#f5f0ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="1165" y="885" class="subheading">Secrets and configuration</text>
+  <rect x="1175" y="905" width="305" height="60" class="box control"/>
+  <text x="1327" y="929" text-anchor="middle" class="label">AWS Secrets Manager</text>
+  <text x="1327" y="949" text-anchor="middle" class="small">DB credentials (never in Git)</text>
+
+  <!-- Flow arrows inside -->
+  <path d="M380 626 H410 V825 H470" class="line"/>
+  <path d="M557 746 V775 H557 V790" class="lineBlue"/>
+  <path d="M645 703 H675" class="lineBlue"/>
+  <path d="M850 703 H880" class="lineBlue"/>
+  <path d="M850 703 H1118 V647 H1175" class="lineGreen"/>
+  <path d="M967 746 V775 H967 V790" class="line"/>
+  <path d="M1327 855 V790 H1055 V825" class="lineGreen"/>
+  <path d="M745 825 H775" class="line"/>
+  <path d="M915 860 V895" class="line dashed"/>
+
+  <!-- ECR image pull arrow -->
+  <path d="M767 230 V275 H1090 V510 H760 V580" class="lineBlue dashed"/>
+  <text x="835" y="268" class="tiny muted">Image pull from ECR</text>
+
+  <!-- Legend -->
+  <rect x="80" y="1035" width="1440" height="25" rx="8" fill="#ffffff" stroke="#d7dee7"/>
+  <rect x="100" y="1042" width="14" height="12" rx="3" fill="#fff8ee" stroke="#d97706"/>
+  <text x="122" y="1053" class="tiny">AWS managed service</text>
+  <rect x="300" y="1042" width="14" height="12" rx="3" fill="#eef5ff" stroke="#2563eb"/>
+  <text x="322" y="1053" class="tiny">Application / Kubernetes</text>
+  <rect x="535" y="1042" width="14" height="12" rx="3" fill="#edfaf4" stroke="#16805d"/>
+  <text x="557" y="1053" class="tiny">Data layer</text>
+  <rect x="680" y="1042" width="14" height="12" rx="3" fill="#f5f0ff" stroke="#7c3aed"/>
+  <text x="702" y="1053" class="tiny">Identity / secrets / GitOps</text>
+  <line x1="925" y1="1048" x2="975" y2="1048" stroke="#425466" stroke-width="2.5"/>
+  <text x="985" y="1053" class="tiny">Solid: intended flow</text>
+  <line x1="1150" y1="1048" x2="1200" y2="1048" stroke="#425466" stroke-width="2.5" stroke-dasharray="7 6"/>
+  <text x="1210" y="1053" class="tiny">Dashed: target / verify</text>
+</svg>
