@@ -8,6 +8,10 @@ resource "aws_secretsmanager_secret" "app_db" {
     Project     = var.project_name
     Environment = var.environment
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_secretsmanager_secret_version" "app_db" {
