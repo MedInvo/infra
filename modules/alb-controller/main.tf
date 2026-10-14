@@ -202,6 +202,7 @@ resource "aws_iam_policy" "alb_controller" {
           "elasticloadbalancing:CreateRule",
           "elasticloadbalancing:DeleteRule",
           "elasticloadbalancing:ModifyRule",
+          "elasticloadbalancing:ModifyListener",
           "elasticloadbalancing:SetRulePriorities",
         ]
         Resource = "*"
