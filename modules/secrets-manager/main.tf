@@ -9,7 +9,7 @@ resource "aws_secretsmanager_secret" "app_db" {
     Environment = var.environment
   }
 
-   lifecycle {
+  lifecycle {
     prevent_destroy = true
   }
 }
