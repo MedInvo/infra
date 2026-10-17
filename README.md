@@ -1,4 +1,4 @@
-# Pharma DevOps Microservices Platform
+# MedInvo DevOps Microservices Platform
 
 A learning-focused, end-to-end DevOps project that takes a multi-service application from local development to AWS using containers, Kubernetes, Infrastructure as Code, CI/CD, GitOps, security scanning, and managed PostgreSQL.
 
