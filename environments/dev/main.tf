@@ -59,6 +59,8 @@ module "eks" {
   cluster_name    = "pharma-dev-cluster"
   cluster_version = "1.33"
 
+  admin_principal_arn = "arn:aws:iam::259732629629:user/terraform-admin"
+
   vpc_id = module.vpc.vpc_id
 
   private_subnet_ids = module.vpc.private_subnet_ids
@@ -96,6 +98,8 @@ module "app_db_secret" {
   db_host     = module.rds.db_address
   db_port     = module.rds.db_port
   db_name     = module.rds.db_name
+
+  manage_secret_version = true
 }
 
 module "external_secrets_iam" {
