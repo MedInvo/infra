@@ -27,9 +27,10 @@ def main():
 
     print("CLEANUP ORDER")
     print("1. Read-only preflight inventory")
-    print("2. Delete Argo CD Applications with foreground cascade")
-    print("3. Wait for controller-managed ALB deletion")
-    print("4. Delete pharma-app namespace")
+    print("2. Delete existing Argo CD Applications with foreground cascade")
+    print("3. Explicitly delete all Ingresses and wait for finalizer/controller cleanup")
+    print("4. Wait for controller-managed ALB deletion")
+    print("5. Delete pharma-app namespace")
     if args.include_addons:
         print("5. Uninstall explicitly configured Helm add-ons (ALB controller, ESO, then Argo CD)")
     if args.include_ecr_images:
