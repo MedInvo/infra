@@ -1,16 +1,15 @@
 
 resource "aws_secretsmanager_secret" "app_db" {
-  name                    = "${var.project_name}/${var.environment}/app-db"
-  description             = "Application PostgreSQL credentials"
-  recovery_window_in_days = 30
+  name        = "${var.project_name}/${var.environment}/app-db"
+  description = "Application PostgreSQL credentials"
+  # This is a disposable demo environment. Force deletion lets a subsequent
+  # Terraform apply recreate the same secret name without a recovery-window
+  # conflict.
+  recovery_window_in_days = 0
 
   tags = {
     Project     = var.project_name
     Environment = var.environment
-  }
-
-  lifecycle {
-    prevent_destroy = true
   }
 }
 
