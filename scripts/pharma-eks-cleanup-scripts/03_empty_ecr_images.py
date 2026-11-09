@@ -1,102 +1,288 @@
 import argparse
+import json
+import time
 
 from cleanup_common import (
-    AWS_REGION, ECR_REPOSITORIES, run, json_output, verify_aws_and_cluster,
-    confirm_execution, say, stop
+    AWS_REGION,
+    ECR_REPOSITORIES,
+    run,
+    json_output,
+    verify_aws_and_cluster,
+    confirm_execution,
+    say,
+    stop,
 )
 
+MAX_IMAGES_PER_BATCH = 100
+MAX_RETRIES = 5
+RETRY_DELAY_SECONDS = 5
+
+
 def list_image_ids(repo: str) -> list[dict]:
-    result = json_output([
-        "aws", "ecr", "list-images", "--repository-name", repo,
-        "--region", AWS_REGION, "--filter", "tagStatus=ANY", "--output", "json"
-    ])
-    # One manifest can be returned once per tag. Delete each digest only once.
-    unique = {}
-    for image in result.get("imageIds", []):
-        key = image.get("imageDigest") or image.get("imageTag")
-        if key:
-            unique[key] = image
-    return list(unique.values())
+    """Return unique ECR image manifests, deduplicated by digest."""
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Delete image manifests/tags from Terraform-managed ECR repositories. Repositories are retained."
+    result = json_output(
+        [
+            "aws",
+            "ecr",
+            "list-images",
+            "--repository-name",
+            repo,
+            "--region",
+            AWS_REGION,
+            "--filter",
+            "tagStatus=ANY",
+            "--output",
+            "json",
+        ]
     )
-    parser.add_argument("--execute", action="store_true", help="Actually delete image IDs.")
-    args = parser.parse_args()
 
-    verify_aws_and_cluster()
-    # Safety check: do not remove image digests that are still referenced by active pods.
+    unique_images = {}
+
+    for image in result.get("imageIds", []):
+        digest = image.get("imageDigest")
+
+        if digest:
+            unique_images[digest] = {"imageDigest": digest}
+        elif image.get("imageTag"):
+            unique_images[image["imageTag"]] = {"imageTag": image["imageTag"]}
+
+    return list(unique_images.values())
+
+
+def check_active_pods():
+    """Prevent deletion if application pods still reference these ECR images."""
+
     pods = json_output(["kubectl", "get", "pods", "-A", "-o", "json"]).get("items", [])
-    repo_names = set(ECR_REPOSITORIES)
+
     in_use = []
+
     for pod in pods:
-        phase = pod.get("status", {}).get("phase")
+        status = pod.get("status", {}).get("phase")
         deleting = pod.get("metadata", {}).get("deletionTimestamp")
-        if phase in ("Succeeded", "Failed") or deleting:
+
+        if status in ("Succeeded", "Failed") or deleting:
             continue
+
         spec = pod.get("spec", {})
-        containers = spec.get("containers", []) + spec.get("initContainers", []) + spec.get("ephemeralContainers", [])
+
+        containers = (
+            spec.get("containers", [])
+            + spec.get("initContainers", [])
+            + spec.get("ephemeralContainers", [])
+        )
+
         for container in containers:
             image = container.get("image", "")
-            if any(repo in image for repo in repo_names):
-                in_use.append(
-                    f"{pod.get('metadata', {}).get('namespace')}/{pod.get('metadata', {}).get('name')} -> {image}"
-                )
+
+            for repo in ECR_REPOSITORIES:
+                if f"/{repo}:" in image or f"/{repo}@" in image:
+                    in_use.append(
+                        f"{pod['metadata'].get('namespace')}/"
+                        f"{pod['metadata'].get('name')} -> {image}"
+                    )
+
     if in_use:
-        stop("ECR images are still referenced by active pods. Clean up those workloads first: " + "; ".join(in_use[:12]))
+        stop(
+            "ECR images are still referenced by active Kubernetes pods:\n"
+            + "\n".join(in_use[:20])
+            + "\nClean up application workloads before deleting images."
+        )
 
-    inventory = {}
-    for repo in ECR_REPOSITORIES:
-        check = run([
-            "aws", "ecr", "describe-repositories", "--repository-names", repo,
-            "--region", AWS_REGION, "--output", "json"
-        ], capture=True, check=False)
-        if check.returncode != 0:
-            say(f"Repository {repo} not found or not accessible; skipping.")
-            continue
-        image_ids = list_image_ids(repo)
-        inventory[repo] = image_ids
-        say(f"{repo}: {len(image_ids)} image manifest(s)/tag reference(s) returned by ECR")
 
-    if not args.execute:
-        say("Dry-run only. No ECR images were deleted. Re-run with --execute after reviewing the repository list.")
+def delete_image_batch(repo: str, images: list[dict]):
+    """Delete a batch of up to 100 image manifests."""
+
+    image_id_args = []
+
+    for image in images:
+        if image.get("imageDigest"):
+            image_id_args.append(f"imageDigest={image['imageDigest']}")
+        elif image.get("imageTag"):
+            image_id_args.append(f"imageTag={image['imageTag']}")
+
+    if not image_id_args:
         return
 
-    confirm_execution(True, "EMPTY PHARMA ECR IMAGES")
-    for repo, image_ids in inventory.items():
-        if not image_ids:
-            say(f"{repo}: already empty.")
-            continue
-        # ECR BatchDeleteImage accepts at most 100 image IDs per request.
-        for start in range(0, len(image_ids), 100):
-            batch = image_ids[start:start + 100]
-            args_list = []
-            for image in batch:
-                if image.get("imageDigest"):
-                    args_list.extend(["--image-ids", f"imageDigest={image['imageDigest']}"])
-                elif image.get("imageTag"):
-                    args_list.extend(["--image-ids", f"imageTag={image['imageTag']}"])
-            if args_list:
-                result = run([
-                    "aws", "ecr", "batch-delete-image",
-                    "--repository-name", repo, "--region", AWS_REGION,
-                    *args_list, "--output", "json"
-                ], capture=True, check=False)
-                if result.returncode != 0:
-                    stop(f"Failed deleting images from {repo}. Inspect ECR errors before retrying.")
-                # AWS may return per-image failures even when the CLI exit code is zero.
-                import json
-                payload = json.loads(result.stdout or "{}")
-                failures = payload.get("failures", [])
-                if failures:
-                    stop(f"ECR reported deletion failures in {repo}: {failures[:5]}")
-        remaining = list_image_ids(repo)
-        if remaining:
-            stop(f"{repo} still contains {len(remaining)} image references. Check ECR lifecycle/immutability or retry.")
-        say(f"{repo}: image manifests/tags deleted. Repository retained.")
+    command = [
+        "aws",
+        "ecr",
+        "batch-delete-image",
+        "--repository-name",
+        repo,
+        "--region",
+        AWS_REGION,
+        "--image-ids",
+        *image_id_args,
+        "--output",
+        "json",
+    ]
 
-    say("ECR image cleanup complete. ECR repositories were NOT deleted; Terraform/GitHub Actions remains responsible for repository destruction.")
+    result = run(command, capture=True, check=False)
+
+    if result.returncode != 0:
+        say(f"WARNING: AWS CLI deletion request failed for {repo}.")
+        return
+
+    try:
+        response = json.loads(result.stdout or "{}")
+    except json.JSONDecodeError:
+        stop(f"Could not parse AWS ECR deletion response for {repo}.")
+
+    deleted = response.get("imageIds", [])
+    failures = response.get("failures", [])
+
+    say(f"{repo}: AWS deleted {len(deleted)} image reference(s).")
+
+    for failure in failures:
+        image_id = failure.get("imageId", {})
+        reason = failure.get("failureReason", "Unknown")
+        detail = failure.get("failureCode", "Unknown")
+        say(f"Deletion warning: {image_id} | " f"{detail} | {reason}")
+
+
+def clean_repository(repo: str):
+    """Delete every image manifest and verify that the repository is empty."""
+
+    say(f"Starting cleanup: {repo}")
+
+    for attempt in range(1, MAX_RETRIES + 1):
+
+        images = list_image_ids(repo)
+
+        if not images:
+            say(f"{repo}: repository is EMPTY.")
+            return
+
+        say(
+            f"{repo}: {len(images)} unique image manifest(s) found. "
+            f"Attempt {attempt}/{MAX_RETRIES}."
+        )
+
+        for start in range(0, len(images), MAX_IMAGES_PER_BATCH):
+            batch = images[start : start + MAX_IMAGES_PER_BATCH]
+
+            delete_image_batch(repo, batch)
+
+        remaining = list_image_ids(repo)
+
+        if not remaining:
+            say(f"{repo}: ALL image versions and tags deleted.")
+            return
+
+        say(f"{repo}: {len(remaining)} image manifest(s) remain.")
+
+        if attempt < MAX_RETRIES:
+            say(f"Retrying in {RETRY_DELAY_SECONDS} seconds...")
+            time.sleep(RETRY_DELAY_SECONDS)
+
+    remaining = list_image_ids(repo)
+
+    if remaining:
+        examples = [
+            image.get("imageDigest") or image.get("imageTag")
+            for image in remaining[:10]
+        ]
+
+        stop(
+            f"{repo} still contains {len(remaining)} image manifest(s) "
+            f"after {MAX_RETRIES} attempts. "
+            f"Examples: {examples}. "
+            "Review the AWS ECR deletion failure reasons."
+        )
+
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Delete all image versions and tags from Pharma ECR "
+            "repositories. ECR repositories are retained."
+        )
+    )
+
+    parser.add_argument(
+        "--execute", action="store_true", help="Actually delete ECR images."
+    )
+
+    args = parser.parse_args()
+
+    # Verify AWS account, EKS cluster and kubectl context.
+    verify_aws_and_cluster()
+
+    # Protect images currently used by active pods.
+    check_active_pods()
+
+    # Check repositories and collect inventory.
+    inventory = {}
+
+    say("Checking Pharma ECR repositories...")
+
+    for repo in ECR_REPOSITORIES:
+
+        result = run(
+            [
+                "aws",
+                "ecr",
+                "describe-repositories",
+                "--repository-names",
+                repo,
+                "--region",
+                AWS_REGION,
+                "--output",
+                "json",
+            ],
+            capture=True,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            say(f"{repo}: not found or inaccessible. Skipping.")
+            continue
+
+        images = list_image_ids(repo)
+        inventory[repo] = images
+
+        say(f"{repo}: {len(images)} unique image manifest(s) found.")
+
+    if not inventory:
+        stop("No accessible Pharma ECR repositories were found.")
+
+    # Dry-run mode.
+    if not args.execute:
+        say("DRY-RUN completed. No images were deleted.")
+        say("Review the inventory before executing.")
+        say("To delete images, run with --execute.")
+        return
+
+    # Require explicit confirmation.
+    confirm_execution(True, "EMPTY PHARMA ECR IMAGES")
+
+    # Delete images repository by repository.
+    for repo in inventory:
+        clean_repository(repo)
+
+    # Final verification across all repositories.
+    say("Performing final ECR verification...")
+
+    for repo in inventory:
+        remaining = list_image_ids(repo)
+
+        if remaining:
+            stop(
+                f"FINAL VERIFICATION FAILED: "
+                f"{repo} contains {len(remaining)} image(s)."
+            )
+
+        say(f"{repo}: VERIFIED EMPTY.")
+
+    say("=" * 55)
+    say("ECR IMAGE CLEANUP COMPLETED SUCCESSFULLY.")
+    say("All image versions and tags have been deleted.")
+    say("ECR repositories have been RETAINED.")
+    say("Terraform remains responsible for deleting repositories.")
+    say("=" * 55)
+
 
 if __name__ == "__main__":
     main()
