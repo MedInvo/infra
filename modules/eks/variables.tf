@@ -50,3 +50,8 @@ variable "max_nodes" {
   type    = number
   default = 3
 }
+
+variable "admin_principal_arn" {
+  description = "IAM principal allowed to administer the EKS cluster"
+  type        = string
+}
