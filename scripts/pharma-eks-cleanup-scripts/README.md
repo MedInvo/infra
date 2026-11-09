@@ -85,12 +85,15 @@ python3 01_cleanup_application.py --execute
 It:
 1. Verifies the AWS account, EKS cluster and current kubectl context.
 2. Captures the Ingress ALB DNS name before deletion.
-3. Disables automated sync for the four known Argo CD Applications.
-4. Deletes the Argo CD Applications with foreground cascade so Argo CD removes tracked resources.
-5. Waits for AWS Load Balancer Controller to delete the ALB after the Ingress is removed.
-6. Deletes the `pharma-app` namespace, which removes remaining app resources, ExternalSecret and generated Kubernetes Secret.
+3. Disables automated sync for the four known Argo CD Applications that still exist.
+4. Deletes those Argo CD Applications with foreground cascade. Missing Applications are skipped safely.
+5. Explicitly deletes every Ingress in `pharma-app`, even if Argo CD Applications are already missing, and waits for Kubernetes finalizers/controller cleanup.
+6. Verifies no Ingress objects remain, then waits for AWS to confirm the captured ALBs are gone.
+7. Deletes the `pharma-app` namespace, which removes remaining app resources, ExternalSecret and generated Kubernetes Secret.
 
 **Why the ALB is not deleted directly:** the ALB was created and is owned by AWS Load Balancer Controller through the Kubernetes Ingress. Deleting the Ingress/Application is the correct owner-aware action. The script waits until AWS confirms that ALB is gone. It intentionally does not blindly delete load balancers or target groups by name.
+
+The script does not rely on Argo CD being present or having Application objects. It explicitly deletes Ingress objects before waiting for ALB deletion. This handles the recovery case where Applications were deleted earlier but the Ingress remained.
 
 If ALB deletion times out, stop and inspect:
 ```bash
