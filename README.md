@@ -468,20 +468,7 @@ Useful rules:
 
 The intended CI authentication path is:
 
-```mermaid
-sequenceDiagram
-    participant GH as GitHub Actions
-    participant OIDC as GitHub OIDC provider
-    participant STS as AWS STS
-    participant IAM as AWS IAM role
-    participant ECR as Amazon ECR
-
-    GH->>OIDC: Request signed identity token
-    GH->>STS: AssumeRoleWithWebIdentity
-    STS->>IAM: Validate trust policy and token claims
-    IAM-->>GH: Temporary credentials
-    GH->>ECR: Authenticate and push authorized image
-```
+![alt text](docs/oidc.png)
 
 For OIDC to work, all of these must agree:
 
