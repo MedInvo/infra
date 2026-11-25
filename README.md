@@ -466,8 +466,7 @@ Useful rules:
 
 The intended CI authentication path is:
 
-![Uploading Screenshot 2026-11-18 at 9.41.23 AM.png…]()
-
+![alt text](docs/oidc.png)
 
 For OIDC to work, all of these must agree:
 
