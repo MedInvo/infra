@@ -1,4 +1,4 @@
-# Pharma DevOps Microservices Platform
+# MedInvo DevOps Microservices Platform
 
 A learning-focused, end-to-end DevOps project that takes a multi-service application from local development to AWS using containers, Kubernetes, Infrastructure as Code, CI/CD, GitOps, security scanning, and managed PostgreSQL.
 
@@ -344,8 +344,8 @@ pharma-devops-microservices/
 │           ├── eks/
 │           ├── rds/
 │           ├── alb-controller/
-│           ├── api-gateway/
-│           └── route53/
+│          
+│          
 ├── k8s/                            # optional/direct Kubernetes manifests
 ├── docker-compose.yml              # local multi-container development
 ├── .github/
@@ -404,8 +404,6 @@ Terraform creates cloud infrastructure. Kubernetes/Helm/Argo CD deploy applicati
 | `eks` | EKS cluster and compute resources as implemented | Uses VPC subnet IDs and cluster/node IAM roles |
 | `rds` | PostgreSQL instance, subnet group, and DB security group as implemented | Uses VPC subnets and networking/security configuration |
 | `alb-controller` | IAM/IRSA-related resources for AWS Load Balancer Controller as implemented | Depends on EKS cluster identity/OIDC; controller installation may be managed separately by Helm |
-| `api-gateway` | API Gateway resources as implemented in the module | Must be called from the root module and wired to the chosen backend integration |
-| `route53` | DNS record resources as implemented in the module | Needs the actual hosted zone/domain and the target endpoint |
 
 ### Dependency overview
 
